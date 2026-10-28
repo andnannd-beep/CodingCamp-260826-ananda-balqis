@@ -638,17 +638,17 @@ const TodoModule = (() => {
 
   /* ── Filter ── */
 
-  // Classes that make a filter button look ACTIVE (charcoal fill)
+  // Classes that make a filter button look ACTIVE (Fearless gold fill)
   const FILTER_ACTIVE_CLASSES = [
-    'bg-charcoal', 'dark:bg-dark-text', 'text-ivory', 'dark:text-dark-bg',
-    'border-charcoal', 'dark:border-dark-text',
+    'bg-fearless-accent', 'dark:bg-dark-fearless', 'text-white', 'dark:text-dark-bg',
+    'border-fearless-accent', 'dark:border-dark-fearless',
   ];
-  // Classes that make a filter button look INACTIVE (transparent outline)
+  // Classes that make a filter button look INACTIVE (neutral outline)
   const FILTER_INACTIVE_CLASSES = [
-    'bg-transparent', 'text-muted', 'dark:text-ash',
-    'border-taupe', 'dark:border-dark-border',
-    'hover:bg-parchment/60', 'hover:text-charcoal',
-    'dark:hover:bg-dark-border', 'dark:hover:text-dark-text',
+    'bg-transparent', 'text-era-muted', 'dark:text-dark-muted',
+    'border-fearless-accent/40', 'dark:border-dark-border',
+    'hover:bg-fearless-light', 'hover:text-fearless-deep',
+    'dark:hover:bg-dark-raise', 'dark:hover:text-dark-fearless',
   ];
 
   function setFilter(value) {
@@ -922,7 +922,118 @@ const LinksModule = (() => {
 
 
 /* ═══════════════════════════════════════════════════════════════
-   7. INIT  — boot all modules
+   7. NOTES
+═══════════════════════════════════════════════════════════════ */
+
+const NotesModule = (() => {
+  const STORAGE_KEY = 'kawaii-notes';
+  const textareaEl  = document.getElementById('notes-input');
+  const statusEl    = document.getElementById('notes-status');
+
+  let debounceTimer = null;
+
+  function load() {
+    if (!textareaEl) return;
+    const saved = storageGet(STORAGE_KEY, '');
+    // Only restore if the value is a non-empty string to avoid overwriting
+    if (typeof saved === 'string') textareaEl.value = saved;
+  }
+
+  function save() {
+    if (!textareaEl) return;
+    storageSet(STORAGE_KEY, textareaEl.value);
+    if (statusEl) {
+      statusEl.textContent = 'Saved ✓';
+      // Clear the status message after 2 seconds
+      setTimeout(() => { if (statusEl) statusEl.textContent = ''; }, 2000);
+    }
+  }
+
+  function onInput() {
+    // Debounce: wait 400ms after the user stops typing before saving
+    clearTimeout(debounceTimer);
+    if (statusEl) statusEl.textContent = 'Saving…';
+    debounceTimer = setTimeout(save, 400);
+  }
+
+  function init() {
+    load();
+    if (textareaEl) textareaEl.addEventListener('input', onInput);
+  }
+
+  return { init };
+})();
+
+
+/* ═══════════════════════════════════════════════════════════════
+   8. MOOD TRACKER
+═══════════════════════════════════════════════════════════════ */
+
+const MoodModule = (() => {
+  const STORAGE_KEY  = 'kawaii-mood';
+  const moodButtons  = document.querySelectorAll('.mood-btn');
+  const emojiEl      = document.getElementById('mood-emoji');
+  const labelEl      = document.getElementById('mood-label');
+
+  // Map data-mood → display emoji and friendly label
+  const MOOD_MAP = {
+    happy:  { emoji: '😊', label: 'Feeling happy today! ★' },
+    sunny:  { emoji: '🌤', label: 'A bright, golden day ✦' },
+    meh:    { emoji: '😐', label: 'Just okay — that\'s valid too.' },
+    rainy:  { emoji: '🌧', label: 'A little gloomy today. It passes.' },
+    sleepy: { emoji: '😴', label: 'Could use a little more rest…' },
+  };
+
+  // Classes applied to the currently selected mood button
+  const SELECTED_CLASSES = ['border-debut-accent', 'bg-debut-light', 'dark:bg-dark-raise', 'dark:border-dark-debut'];
+
+  function applyMood(mood) {
+    const data = MOOD_MAP[mood];
+    if (!data) return;
+
+    // Update the recap display
+    if (emojiEl)  emojiEl.textContent  = data.emoji;
+    if (labelEl)  labelEl.textContent  = data.label;
+
+    // Update button pressed states
+    moodButtons.forEach(btn => {
+      const isSelected = btn.dataset.mood === mood;
+      btn.setAttribute('aria-pressed', String(isSelected));
+      if (isSelected) {
+        btn.classList.add(...SELECTED_CLASSES);
+      } else {
+        btn.classList.remove(...SELECTED_CLASSES);
+      }
+    });
+  }
+
+  function onButtonClick(e) {
+    const btn = e.target.closest('.mood-btn');
+    if (!btn) return;
+    const mood = btn.dataset.mood;
+    if (!mood) return;
+    applyMood(mood);
+    storageSet(STORAGE_KEY, mood);
+    // Small accessibility wiggle animation
+    animateOnce(btn, 'animate-wiggle');
+  }
+
+  function init() {
+    // Restore saved mood
+    const saved = storageGet(STORAGE_KEY, null);
+    if (saved && MOOD_MAP[saved]) applyMood(saved);
+
+    // Delegate click handling to the mood-buttons container
+    const container = document.getElementById('mood-buttons');
+    if (container) container.addEventListener('click', onButtonClick);
+  }
+
+  return { init };
+})();
+
+
+/* ═══════════════════════════════════════════════════════════════
+   9. INIT  — boot all modules
 ═══════════════════════════════════════════════════════════════ */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -932,4 +1043,6 @@ document.addEventListener('DOMContentLoaded', () => {
   TimerModule.init();
   TodoModule.init();
   LinksModule.init();
+  NotesModule.init();
+  MoodModule.init();
 });
