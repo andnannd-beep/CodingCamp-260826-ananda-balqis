@@ -1,0 +1,235 @@
+/*
+ * src/input.css — Tailwind CSS source
+ * ─────────────────────────────────────────────────────────────────
+ * Build command:  npm run build
+ * Output:         css/style.css
+ *
+ * RULE: @import MUST come before @tailwind directives.
+ * All other styling lives in index.html as utility classes.
+ * Only pseudo-elements, JS-injected components, and keyframes live here.
+ */
+
+/* ── 1. Google Fonts — must be FIRST ────────────────────────────
+   @import must precede all other rules in valid CSS.
+   Moving it here fixes the previous build ordering bug.        */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@300;400;500;600&display=swap');
+
+/* ── 2. Tailwind layers ─────────────────────────────────────── */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ════════════════════════════════════════════════════════════════
+   @layer base
+   Rules that cannot be expressed as utility classes:
+   – pseudo-elements (::before)
+   – SVG ring transition (stroke-dashoffset is not a Tailwind prop)
+   – Focus ring (augments Tailwind's ring utilities)
+════════════════════════════════════════════════════════════════ */
+@layer base {
+  html {
+    @apply scroll-smooth;
+  }
+
+  body {
+    @apply bg-ivory text-charcoal font-sans antialiased min-h-screen transition-colors duration-300;
+  }
+
+  body.dark {
+    @apply bg-dark-bg text-dark-text;
+  }
+
+  /*
+   * Subtle paper-grain texture overlay.
+   * Uses an inline SVG data URI so no image file is required.
+   * This is a pseudo-element — cannot be expressed as a utility class.
+   */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    opacity: 0.4;
+  }
+
+  body.dark::before {
+    opacity: 0.15;
+  }
+
+  /* SVG timer ring — stroke-dashoffset is not a Tailwind utility */
+  #timer-ring {
+    transition: stroke-dashoffset 1s linear;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   @layer components
+   These classes are referenced in js/script.js template literals
+   and therefore cannot be replaced with inline HTML utilities.
+   Tailwind always includes @layer components in the build output.
+════════════════════════════════════════════════════════════════ */
+@layer components {
+
+  /*
+   * .checkbox-custom
+   * Standard HTML checkboxes can't be styled with utilities alone.
+   * The :checked::after pseudo-element creates the custom checkmark.
+   */
+  .checkbox-custom {
+    @apply w-4 h-4 rounded-sm border-2 border-taupe bg-transparent
+           cursor-pointer shrink-0 mt-0.5 transition-colors duration-150;
+    appearance: none;
+    -webkit-appearance: none;
+    position: relative;
+  }
+
+  .checkbox-custom:checked {
+    @apply bg-charcoal border-charcoal;
+  }
+
+  /* Custom checkmark drawn via pseudo-element */
+  .checkbox-custom:checked::after {
+    content: '';
+    position: absolute;
+    top: 1px;
+    left: 4px;
+    width: 5px;
+    height: 9px;
+    border: 2px solid #F3EEE5; /* ivory */
+    border-top: none;
+    border-left: none;
+    transform: rotate(45deg);
+  }
+
+  .dark .checkbox-custom {
+    @apply border-ash;
+  }
+
+  .dark .checkbox-custom:checked {
+    @apply bg-dark-text border-dark-text;
+  }
+
+  .dark .checkbox-custom:checked::after {
+    border-color: #1E1C1A; /* dark-bg */
+  }
+
+  /*
+   * .todo-item — injected by TodoModule.render()
+   * Each <li> in the task list gets this class from JS.
+   */
+  .todo-item {
+    @apply flex items-start gap-3 p-3 rounded-md border border-transparent
+           hover:border-parchment hover:bg-parchment/20
+           transition-all duration-150;
+  }
+
+  .dark .todo-item {
+    @apply hover:border-dark-border hover:bg-dark-border/30;
+  }
+
+  /*
+   * .todo-text — the <label> inside each todo item (injected by JS).
+   * The completed state applies line-through via the parent .completed class.
+   */
+  .todo-text {
+    @apply flex-1 font-sans text-sm text-charcoal dark:text-dark-text
+           leading-snug cursor-pointer select-none break-words min-w-0;
+  }
+
+  .todo-item.completed .todo-text {
+    @apply line-through text-ash dark:text-dark-muted;
+  }
+
+  /*
+   * .todo-item-actions — the edit/delete button wrapper (injected by JS).
+   * Hidden by default; revealed on hover/focus-within of the parent.
+   */
+  .todo-item-actions {
+    @apply flex items-center gap-0.5 opacity-0
+           transition-opacity duration-150 shrink-0;
+  }
+
+  .todo-item:hover .todo-item-actions,
+  .todo-item:focus-within .todo-item-actions {
+    @apply opacity-100;
+  }
+
+  /* Touch devices: always show actions (no hover available) */
+  @media (hover: none) {
+    .todo-item-actions {
+      @apply opacity-100;
+    }
+  }
+
+  /*
+   * .btn-ghost — icon button (used in JS-injected edit button)
+   */
+  .btn-ghost {
+    @apply inline-flex items-center justify-center p-1.5 rounded
+           text-taupe hover:text-charcoal hover:bg-parchment/50
+           transition-colors duration-150 cursor-pointer;
+  }
+
+  .dark .btn-ghost {
+    @apply text-dark-muted hover:text-dark-text hover:bg-dark-border;
+  }
+
+  /*
+   * .btn-danger — icon button (used in JS-injected delete buttons)
+   */
+  .btn-danger {
+    @apply inline-flex items-center justify-center p-1.5 rounded
+           text-taupe hover:text-red-700 hover:bg-red-50
+           transition-colors duration-150 cursor-pointer;
+  }
+
+  .dark .btn-danger {
+    @apply text-dark-muted hover:text-red-400 hover:bg-red-900/30;
+  }
+
+  /*
+   * .link-chip — anchor element inside each quick link (injected by JS).
+   */
+  .link-chip {
+    @apply inline-flex items-center gap-1.5 px-3 py-1.5 rounded
+           border border-parchment bg-white/60 text-muted text-sm font-medium
+           hover:bg-parchment/50 hover:text-charcoal hover:border-taupe
+           transition-all duration-150 cursor-pointer
+           overflow-hidden truncate;
+  }
+
+  .dark .link-chip {
+    @apply border-dark-border bg-dark-surface/60 text-dark-muted
+           hover:bg-dark-border hover:text-dark-text hover:border-ash;
+  }
+
+  /*
+   * .link-entry — wrapper div around each link chip + delete button (injected by JS).
+   */
+  .link-entry {
+    @apply flex items-center gap-1;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   @layer utilities
+   Custom utility classes.
+   Keyframe animations are defined in tailwind.config.js and
+   exposed as animate-* classes (e.g. animate-fade-in).
+   We also add shorthand aliases used by animateOnce() in JS.
+════════════════════════════════════════════════════════════════ */
+@layer utilities {
+  /*
+   * .fade-in and .check-pop are applied by animateOnce() in script.js.
+   * They map to the animation tokens defined in tailwind.config.js.
+   */
+  .fade-in   { animation: fade-in   0.2s ease-out both; }
+  .check-pop { animation: check-pop 0.2s ease-out; }
+
+  /*
+   * .timer-pulse is toggled by the timer when it finishes.
+   */
+  .timer-pulse { animation: pulse-ring 1.5s ease-in-out infinite; }
+}

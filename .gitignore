@@ -1,0 +1,15 @@
+# Dependencies
+node_modules/
+
+# OS files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Editor / IDE
+.vscode/
+*.code-workspace
+
+# Build artefacts (the compiled css/style.css IS committed for GitHub Pages)
+# Nothing else to exclude from the build output

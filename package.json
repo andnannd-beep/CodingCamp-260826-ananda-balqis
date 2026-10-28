@@ -1,0 +1,12 @@
+{
+  "name": "tortured-poets-dashboard",
+  "version": "1.0.0",
+  "description": "The Tortured Poets Dashboard — a TTPD-inspired To-Do List Life Dashboard",
+  "scripts": {
+    "build": "tailwindcss -i ./src/input.css -o ./css/style.css --minify",
+    "dev": "tailwindcss -i ./src/input.css -o ./css/style.css --watch"
+  },
+  "devDependencies": {
+    "tailwindcss": "3.4.1"
+  }
+}
